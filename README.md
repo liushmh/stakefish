@@ -60,11 +60,3 @@ Add a CI pipeline (GitHub Actions, GitLab CI, etc.) to test (basic tests, lintin
 - Any improvements on the Swagger/OpenAPI definitions are welcome.
 - Pay attention to details.
 
-
-global:
-  scrape_interval: 15s
-
-scrape_configs:
-  - job_name: 'my-nodejs-app'
-    static_configs:
-      - targets: ['localhost:3000']
