@@ -2,13 +2,14 @@ import express from 'express';
 import bodyParser from 'body-parser';
 import dns from 'dns';
 import net from 'net';
+import os from 'os';
 import pkg from 'validator';
 
 // swagger lib
 import swaggerUi from 'swagger-ui-express';
 
 // Prometheus client lib
-import { collectDefaultMetrics, Registry } from 'prom-client';
+import { collectDefaultMetrics, Registry, Histogram } from 'prom-client';
 
 import swaggerDocument from './swagger.json' assert { type: 'json' };
 import packageJson from './package.json' assert { type: 'json' };
@@ -21,6 +22,16 @@ const register = new Registry();
 
 // Metrics
 collectDefaultMetrics({ register });
+
+const httpRequestDurationMicroseconds = new Histogram({
+    name: 'http_request_duration_ms',
+    help: 'Duration of HTTP requests in ms',
+    labelNames: ['method', 'route', 'code'],
+    buckets: [1, 5, 15, 50, 100, 500] // Define buckets for response times in milliseconds
+});
+
+register.registerMetric(httpRequestDurationMicroseconds);
+
 
 // DNS Validator
 const { isFQDN } = pkg;
@@ -44,15 +55,11 @@ app.use((req, res, next) => {
         // Optionally stringify and truncate the request body to avoid large log entries
         const requestBody = JSON.stringify(req.body).substring(0, 100);
         logger.info(`${logMessage} - Body: ${requestBody}`);
+
+        httpRequestDurationMicroseconds.labels(req.method, req.path, res.statusCode).observe(duration);
     });
     next();
 });
-
-app.use((err, req, res, next) => {
-    logger.error('Unhandled exception', err);
-    res.status(500).send('Internal Server Error');
-});
-
 
 // Metrics endpoint
 app.get('/metrics', async (req, res) => {
@@ -63,15 +70,35 @@ app.get('/metrics', async (req, res) => {
 
 // Health check endpoint
 app.get('/health', async (req, res) => {
-    const mongoDBStatus = await getMongoDBInfo();
+    try {
+        const { operational, dbStats } = await getMongoDBInfo();
+        const cpuUsage = os.loadavg(); // Returns an array with 1, 5, and 15 minute load averages.
+        const memoryUsage = process.memoryUsage(); // Returns an object with memory usage information.
 
-    res.json({
-        status: 'OK',
-        database: mongoDBStatus,
-        // TODO: Add more system health checks as needed
-    });
+        res.json({
+            status: 'up',
+            timestamp: Date.now(),
+            version: packageJson.version,
+            services: {
+                database: operational ? 'connected' : 'disconnected',
+                dbStats,
+            },
+            system: {
+                cpuLoad: cpuUsage,
+                memoryUsage: {
+                    rss: memoryUsage.rss, // Resident set size
+                    heapTotal: memoryUsage.heapTotal, // V8's total available memory
+                    heapUsed: memoryUsage.heapUsed, // V8's used memory
+                    external: memoryUsage.external, // Memory used by C++ objects bound to JavaScript objects managed by V8
+                },
+            },
+        });
+    }
+    catch (e) {
+        logger.error('Error fetching health:', e);
+        res.status(500).json({status:'down', error: 'Error fetching health' });
+    }
 });
-
 
 
 app.get('/', (req, res) => {
@@ -86,9 +113,7 @@ app.get('/', (req, res) => {
 });
 
 app.get('/v1/history', (req, res) => {
-    getDocuments({
-
-    })
+    getDocuments({ limit: 20 })
         .then((documents) => {
             res.json(documents);
         })
@@ -168,7 +193,7 @@ const server = app.listen(PORT, () => {
 
 function shutdown() {
     console.log('Shutting down server...');
-    
+
     logger.info('Shutting down server...');
     server.close(() => {
         logger.info('Server shut down.');

@@ -31,5 +31,16 @@ services:
       - /var/run/docker.sock:/var/run/docker.sock
     command: --interval 30 webserver
 
+  prometheus:
+    image: prom/prometheus:v2.26.0 # Use the desired Prometheus version
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml # Mount your config file
+    ports:
+      - "9090:9090"
+    command:
+      - "--config.file=/etc/prometheus/prometheus.yml"
+    depends_on:
+      - webserver
+
 volumes:
   mongodb_data:

@@ -5,7 +5,8 @@
   "main": "index.js",
   "scripts": {
     "dev": "nodemon server.js",
-    "test": "npx mocha test/api.test.js"
+    "test": "npx mocha test/api.test.js",
+    "lint": "npx eslint **/*.js"
   },
   "keywords": [],
   "author": "",
@@ -21,7 +22,11 @@
     "winston": "^3.11.0"
   },
   "devDependencies": {
+    "@babel/core": "^7.23.9",
+    "@babel/eslint-parser": "^7.23.10",
+    "@babel/preset-env": "^7.23.9",
     "chai": "^5.1.0",
+    "eslint": "^8.56.0",
     "mocha": "^10.3.0",
     "nodemon": "^3.0.3",
     "supertest": "^6.3.4"

@@ -18,17 +18,12 @@ async function connect() {
 async function getMongoDBInfo() {
   try {
     const db = await connect();
-    const adminDb = db.admin();
-
-    // Get server status
-    const serverStatus = await adminDb.serverStatus();
 
     // Get database statistics
     const dbStats = await db.stats();
 
     return {
       operational: true,
-      serverStatus,
       dbStats,
     };
   } catch (error) {
