@@ -1,0 +1,185 @@
+{
+  "swagger": "2.0",
+  "info": {
+      "description": "Implementation for the interview challenge",
+      "title": "Interview challenge",
+      "contact": {},
+      "version": "1.0"
+  },
+  "basePath": "/v1",
+  "paths": {
+      "/history": {
+          "get": {
+              "description": "List queries",
+              "consumes": [
+                  "application/json"
+              ],
+              "produces": [
+                  "application/json"
+              ],
+              "tags": [
+                  "history"
+              ],
+              "summary": "List queries",
+              "operationId": "queries_history",
+              "responses": {
+                  "200": {
+                      "description": "OK",
+                      "schema": {
+                          "type": "array",
+                          "items": {
+                              "$ref": "#/definitions/model.Query"
+                          }
+                      }
+                  },
+                  "400": {
+                      "description": "Bad Request",
+                      "schema": {
+                          "$ref": "#/definitions/utils.HTTPError"
+                      }
+                  }
+              }
+          }
+      },
+      "/tools/lookup": {
+          "get": {
+              "description": "Lookup domain and return all IPv4 addresses",
+              "consumes": [
+                  "application/json"
+              ],
+              "produces": [
+                  "application/json"
+              ],
+              "tags": [
+                  "tools"
+              ],
+              "summary": "Lookup domain",
+              "operationId": "lookup_domain",
+              "parameters": [
+                  {
+                      "type": "string",
+                      "description": "Domain name",
+                      "name": "domain",
+                      "in": "query",
+                      "required": true
+                  }
+              ],
+              "responses": {
+                  "200": {
+                      "description": "OK",
+                      "schema": {
+                          "$ref": "#/definitions/model.Query"
+                      }
+                  },
+                  "400": {
+                      "description": "Bad Request",
+                      "schema": {
+                          "$ref": "#/definitions/utils.HTTPError"
+                      }
+                  },
+                  "404": {
+                      "description": "Not Found",
+                      "schema": {
+                          "$ref": "#/definitions/utils.HTTPError"
+                      }
+                  }
+              }
+          }
+      },
+      "/tools/validate": {
+          "post": {
+              "description": "Simple IP valication",
+              "consumes": [
+                  "application/json"
+              ],
+              "produces": [
+                  "application/json"
+              ],
+              "tags": [
+                  "tools"
+              ],
+              "summary": "Simple IP validation",
+              "operationId": "validate_ip",
+              "parameters": [
+                  {
+                      "description": "IP to validate",
+                      "name": "request",
+                      "in": "body",
+                      "required": true,
+                      "schema": {
+                          "$ref": "#/definitions/handler.ValidateIPRequest"
+                      }
+                  }
+              ],
+              "responses": {
+                  "200": {
+                      "description": "OK",
+                      "schema": {
+                          "$ref": "#/definitions/handler.ValidateIPResponse"
+                      }
+                  },
+                  "400": {
+                      "description": "Bad Request",
+                      "schema": {
+                          "$ref": "#/definitions/utils.HTTPError"
+                      }
+                  }
+              }
+          }
+      }
+  },
+  "definitions": {
+      "handler.ValidateIPRequest": {
+          "type": "object",
+          "properties": {
+              "ip": {
+                  "type": "string"
+              }
+          }
+      },
+      "handler.ValidateIPResponse": {
+          "type": "object",
+          "properties": {
+              "status": {
+                  "type": "boolean"
+              }
+          }
+      },
+      "model.Address": {
+          "type": "object",
+          "properties": {
+              "ip": {
+                  "type": "string"
+              }
+          }
+      },
+      "model.Query": {
+          "type": "object",
+          "properties": {
+              "addresses": {
+                  "type": "array",
+                  "items": {
+                      "$ref": "#/definitions/model.Address"
+                  }
+              },
+              "client_ip": {
+                  "type": "string"
+              },
+              "created_at": {
+                  "type": "integer"
+              },
+              "domain": {
+                  "type": "string"
+              }
+          }
+      },
+      "utils.HTTPError": {
+          "type": "object",
+          "properties": {
+              "message": {
+                  "type": "string"
+              }
+          }
+      }
+  }
+}

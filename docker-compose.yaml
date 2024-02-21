@@ -1,0 +1,35 @@
+version: '3.8'
+services:
+  webserver:
+    image: node:latest
+    init: true
+    container_name: webserver
+    volumes:
+      - .:/usr/src/app
+      - /usr/src/app/node_modules
+    working_dir: /usr/src/app
+    ports:
+      - "${WEBSERVER_PORT}:3000" # Port configured by environment variable
+    environment:
+      - MONGO_URL=mongodb://mongodb:27017/${DB_NAME}
+    command: bash -c "yarn install && yarn run dev"
+    stop_grace_period: 30s
+    depends_on:
+      - mongodb
+
+  mongodb:
+    image: mongo:latest
+    container_name: mongodb
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongodb_data:/data/db
+
+  watchtower:
+    image: containrrr/watchtower
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    command: --interval 30 webserver
+
+volumes:
+  mongodb_data:
